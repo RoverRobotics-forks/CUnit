@@ -1,13 +1,11 @@
-project(CUnit C)
+cmake_minimum_required (VERSION 3.2)
+Project(CUnit C)
 
 set(CUNIT_VERSION_MAJOR 3)
 set(CUNIT_VERSION_MINOR 1)
 set(CUNIT_VERSION_PATCH 0)
 set(CUNIT_VERSION "${CUNIT_VERSION_MAJOR}.${CUNIT_VERSION_MINOR}.${CUNIT_VERSION_PATCH}")
 set(CUNIT_RELEASE cunity)
-
-
-cmake_minimum_required (VERSION 3.2)
 
 if(CMAKE_COMPILER_IS_GNUCXX)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror -Werror=strict-prototypes")
@@ -18,8 +16,6 @@ if (MSVC)
   set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} /UNDEBUG")
   message(STATUS "CMAKE_C_FLAGS_RELEASE=${CMAKE_C_FLAGS_RELEASE}")
 endif()
-
-FILE(GLOB headerfiles *.h)
 
 configure_file(CUnit/CUnit.h.in ${CMAKE_CURRENT_LIST_DIR}/CUnit/CUnit.h @ONLY)
 
@@ -66,6 +62,8 @@ target_include_directories(cunit
   PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>
     $<INSTALL_INTERFACE:include>)
+FILE(GLOB cunit_public_headers "CUnit/*.h")
+set_target_properties(cunit PROPERTIES PUBLIC_HEADER "${cunit_public_headers}")
 
 
 # for internal test program
@@ -91,9 +89,15 @@ target_compile_definitions(cunit_test
     MEMTRACE
     CUNIT_DO_NOT_DEFINE_UNLESS_BUILDING_TESTS)
 
-if(CUNIT_CMAKE_INSTALL STREQUAL yes)
-  install(DIRECTORY CUnit/ DESTINATION include/CUnit)
-  install(TARGETS cunit DESTINATION lib EXPORT cunit-targets)
-  install(EXPORT cunit-targets DESTINATION CUnit/share/cmake FILE CUnitTargets.cmake)
-  install(FILES CUnitConfig.cmake DESTINATION CUnit/share/cmake)
-endif()
+# export(TARGETS cunit FILE cunit-export.cmake)
+include(GNUInstallDirs)
+install(
+  TARGETS cunit 
+  EXPORT CUnitTargets
+  ARCHIVE # DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+  RUNTIME # DESTINATION "${CMAKE_INSTALL_BINDIR}"    
+  PUBLIC_HEADER DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/CUnit"
+  )
+install(EXPORT CUnitTargets DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/CUnit/cmake" FILE CUnit.cmake)
+  # install(EXPORT cunit DESTINATION CUnit/share/cmake FILE CUnitTargets.cmake)
+  # install(FILES CUnitConfig.cmake DESTINATION CUnit/share/cmake)
