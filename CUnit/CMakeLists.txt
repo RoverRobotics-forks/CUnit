@@ -1,10 +1,9 @@
 cmake_minimum_required (VERSION 3.2)
-Project(CUnit C)
+Project(CUnit
+	VERSION 3.1.2
+	LANGUAGES C
+	)
 
-set(CUNIT_VERSION_MAJOR 3)
-set(CUNIT_VERSION_MINOR 1)
-set(CUNIT_VERSION_PATCH 0)
-set(CUNIT_VERSION "${CUNIT_VERSION_MAJOR}.${CUNIT_VERSION_MINOR}.${CUNIT_VERSION_PATCH}")
 set(CUNIT_RELEASE cunity)
 
 if(CMAKE_COMPILER_IS_GNUCXX)
@@ -17,20 +16,22 @@ if (MSVC)
   message(STATUS "CMAKE_C_FLAGS_RELEASE=${CMAKE_C_FLAGS_RELEASE}")
 endif()
 
+set(CUNIT_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}")
+set(CUNIT_RELEASE "${PROJECT_VERSION_PATCH}")
 configure_file(CUnit/CUnit.h.in ${CMAKE_CURRENT_LIST_DIR}/CUnit/CUnit.h @ONLY)
 
 
 # Package Generator  #######################################################
-set(CPACK_GENERATOR TGZ DEB)
-set(CPACK_PACKAGE_NAME "cunit")
+# set(CPACK_PACKAGE_NAME "cunit")
 set(CPACK_PACKAGE_DESCRIPTION "CUnit")
-set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "The CUnity fork of the CUnit unit test framework")
-set(CPACK_PACKAGE_VERSION_MAJOR "${CUNIT_VERSION_MAJOR}")
-set(CPACK_PACKAGE_VERSION_MINOR "${CUNIT_VERSION_MINOR}")
-set(CPACK_PACKAGE_VERSION_PATCH "${CUNIT_VERSION_PATCH}")
-set(CPACK_PACKAGE_VENDOR "CUnity")
-set(CPACK_PACKAGE_CONTACT "inorton@gmail.com")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Dan's fork of the CUnit unit test framework")
+set(CPACK_PACKAGE_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
+set(CPACK_PACKAGE_VERSION_MINOR ${PROJECT_VERSION_MINOR})
+set(CPACK_PACKAGE_VERSION_PATCH ${PROJECT_VERSION_PATCH})
+set(CPACK_PACKAGE_VENDOR "Digi Labs")
+set(CPACK_PACKAGE_CONTACT "dan@digilabs.io")
 set(CPACK_PACKAGE_FILE_NAME "cunit-${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}")
+set(CPACK_RESOURCE_FILE_LICENSE ${CMAKE_CURRENT_SOURCE_DIR}/../COPYING)
 include (CPack)
 
 FILE(GLOB Basic Sources/Basic/*.c)
@@ -54,16 +55,17 @@ if(UNIX AND NOT APPLE AND NOT CMAKE_SYSTEM_NAME MATCHES "Linux")
   list(APPEND cunit_libs m)
 endif()
 
-add_library(cunit STATIC ${cunit_srcs})
-target_link_libraries(cunit
+set(main_target cunit)
+add_library(${main_target} STATIC ${cunit_srcs})
+target_link_libraries(${main_target}
   PUBLIC
     ${cunit_libs})
-target_include_directories(cunit
+target_include_directories(${main_target}
   PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>
     $<INSTALL_INTERFACE:include>)
-FILE(GLOB cunit_public_headers "CUnit/*.h")
-set_target_properties(cunit PROPERTIES PUBLIC_HEADER "${cunit_public_headers}")
+FILE(GLOB cunit_public_headers "${CMAKE_CURRENT_SOURCE_DIR}/CUnit/*.h")
+set_target_properties(${main_target} PROPERTIES PUBLIC_HEADER "${cunit_public_headers}")
 
 
 # for internal test program
@@ -76,7 +78,7 @@ add_test(NAME
   cunit_test COMMAND $<TARGET_FILE:cunit_test>)
 
 target_include_directories(cunit_test
-  PRIVATE
+  PRIVATE 
     Sources/Framework
     Sources/Test
     ${CMAKE_CURRENT_LIST_DIR}
@@ -89,15 +91,33 @@ target_compile_definitions(cunit_test
     MEMTRACE
     CUNIT_DO_NOT_DEFINE_UNLESS_BUILDING_TESTS)
 
-# export(TARGETS cunit FILE cunit-export.cmake)
+include(CMakePackageConfigHelpers)
 include(GNUInstallDirs)
+
+set(CMAKE_MODULES_DIR "${CMAKE_INSTALL_LIBDIR}/CUnit/cmake")
+
+configure_package_config_file(CUnitConfig.cmake.in
+  CUnitConfig.cmake
+  INSTALL_DESTINATION "${CMAKE_MODULES_DIR}"
+)
+write_basic_package_version_file(
+  CUnitConfigVersion.cmake
+  COMPATIBILITY SameMajorVersion
+)
 install(
-  TARGETS cunit 
-  EXPORT CUnitTargets
-  ARCHIVE # DESTINATION "${CMAKE_INSTALL_LIBDIR}"
-  RUNTIME # DESTINATION "${CMAKE_INSTALL_BINDIR}"    
+  TARGETS ${main_target} cunit_test
+  EXPORT ${PROJECT_NAME}Targets
+  ARCHIVE
+  RUNTIME
   PUBLIC_HEADER DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/CUnit"
   )
-install(EXPORT CUnitTargets DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/CUnit/cmake" FILE CUnit.cmake)
-  # install(EXPORT cunit DESTINATION CUnit/share/cmake FILE CUnitTargets.cmake)
-  # install(FILES CUnitConfig.cmake DESTINATION CUnit/share/cmake)
+install(EXPORT ${PROJECT_NAME}Targets
+  DESTINATION ${CMAKE_MODULES_DIR}
+  FILE ${PROJECT_NAME}Targets.cmake
+  )
+install(FILES
+  ${CMAKE_CURRENT_BINARY_DIR}/CUnitConfig.cmake
+  ${CMAKE_CURRENT_BINARY_DIR}/CUnitConfigVersion.cmake
+  DESTINATION ${CMAKE_MODULES_DIR}
+  )
+

@@ -1,6 +1,6 @@
 
 # CUnit : A Unit Testing Framework
-			               
+
 http://gitlab.com/cunity/cunit - forked from http://cunit.sourceforge.net
 
 CUnit is a Unit testing framework for C.
@@ -21,7 +21,21 @@ Note - the windows-specific gui interface is not yet written.  It is
 still necessary to use either the automated, basic, or console
 interfaces to CUnit on Windows at this time.
 
-# New Releases of CUnit - 2018-08 Onwards
+# Dan's Fork
+
+This is a fork of CUnit, derived from the CUnity Fork. To build:
+
+```
+cd cunit/CUnit
+mkdir build
+cd build
+cmake ..
+cmake --build . --config Release
+; optionally
+cmake --build . --target install
+```
+
+# CUnity: New Releases of CUnit - 2018-08 Onwards
 
 This is a fork of CUnit from the SourceForge version. The fork may heal
 eventually but as of today I have not been able to contact the original
